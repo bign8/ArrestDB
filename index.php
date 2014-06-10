@@ -327,7 +327,7 @@ class ArrestDB {
 					\PDO::ATTR_STRINGIFY_FETCHES => false,
 				);
 
-				if (preg_match('~^sqlite://([[:print:]]++)$~i', $query, $dsn) > 0) {
+				if (preg_match('~^sqlite:([[:print:]]++)$~i', $query, $dsn) > 0) {
 					$options += array(
 						\PDO::ATTR_TIMEOUT => 3,
 					);
