@@ -1,8 +1,9 @@
 <?php
 
-$dsn = '';
 $clients = array(
 );
+
+require('config.php');
 
 /**
 * The MIT License
@@ -27,6 +28,8 @@ if (array_key_exists('_method', $_GET) === true) {
 } else if (array_key_exists('HTTP_X_HTTP_METHOD_OVERRIDE', $_SERVER) === true) {
 	$_SERVER['REQUEST_METHOD'] = strtoupper(trim($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']));
 }
+
+ArrestDB_Custom::RUN();
 
 ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data) {
 	$query = array(
