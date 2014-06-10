@@ -65,7 +65,7 @@ ArrestDB::Serve('GET', '/(#any)/(#num)?', function ($table, $id = null) {
 	);
 
 	if (isset($id) === true) {
-		$query[] = sprintf('WHERE "%s" = ? LIMIT 1', 'id');
+		$query[] = sprintf('WHERE "%s" = ? LIMIT 1', $table . 'ID');
 	} else {
 		if (isset($_GET['by']) === true) {
 			if (isset($_GET['order']) !== true) $_GET['order'] = 'ASC';
@@ -98,7 +98,7 @@ ArrestDB::Serve('GET', '/(#any)/(#num)?', function ($table, $id = null) {
 
 ArrestDB::Serve('DELETE', '/(#any)/(#num)', function ($table, $id) {
 	$query = array(
-		sprintf('DELETE FROM "%s" WHERE "%s" = ?', $table, 'id'),
+		sprintf('DELETE FROM "%s" WHERE "%s" = ?', $table, $table . 'ID'),
 	);
 
 	$query = sprintf('%s;', implode(' ', $query));
@@ -201,7 +201,7 @@ ArrestDB::Serve('PUT', '/(#any)/(#num)', function ($table, $id) {
 		}
 
 		$query = array(
-			sprintf('UPDATE "%s" SET %s WHERE "%s" = ?', $table, implode(', ', $data), 'id'),
+			sprintf('UPDATE "%s" SET %s WHERE "%s" = ?', $table, implode(', ', $data), $table . 'ID'),
 		);
 
 		$query = sprintf('%s;', implode(' ', $query));
