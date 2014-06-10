@@ -177,7 +177,9 @@ ArrestDB::Serve('POST', '/(#any)', function ($table) {
 		if ($result === false) {
 			$result = ArrestDB::$CONFLICT;
 		} else {
+			$insertID = $result;
 			$result = ArrestDB::$CREATED;
+			$result['success']['insertID'] = $insertID;
 		}
 	}
 
