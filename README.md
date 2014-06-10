@@ -190,6 +190,10 @@ callback(JSON);
 
 Ajax-like requests will be minified, whereas normal browser requests will be human-readable.
 
+##Database Design
+
+Table id column is formatted as follows: `table_name + 'ID'`
+
 ##Changelog
 
 - **1.2.0** ~~support for JSON payloads in `POST` and `PUT` (optionally gzipped)~~
@@ -207,5 +211,3 @@ ArrestDB is a complete rewrite of [Arrest-MySQL](https://github.com/gilbitron/Ar
 ##License (MIT)
 
 Copyright (c) 2014 Alix Axel (alix.axel@gmail.com).
-
-[![Donate Bitcoins](https://coinbase.com/assets/buttons/donation_small.png)](https://coinbase.com/checkouts/89e8aa2876ba534f9db3fafa8be4e5fa)

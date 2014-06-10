@@ -1,9 +1,6 @@
 <?php
 
-$dsn = '';
-$clients = array
-(
-);
+require('config.php');
 
 /**
 * The MIT License
@@ -13,73 +10,38 @@ $clients = array
 * Copyright (c) 2014 Alix Axel <alix.axel@gmail.com>
 **/
 
-if (strcmp(PHP_SAPI, 'cli') === 0)
-{
-	exit('ArrestDB should not be run from CLI.' . PHP_EOL);
-}
+if (strcmp(PHP_SAPI, 'cli') === 0) exit('ArrestDB should not be run from CLI.' . PHP_EOL);
 
-if ((empty($clients) !== true) && (in_array($_SERVER['REMOTE_ADDR'], (array) $clients) !== true))
-{
-	$result = array
-	(
-		'error' => array
-		(
-			'code' => 403,
-			'status' => 'Forbidden',
-		),
-	);
-
+if (ArrestDB::Query($dsn) === false) {
+	$result = ArrestDB::$SERVICE_UNAVAILABLE;
 	exit(ArrestDB::Reply($result));
 }
 
-else if (ArrestDB::Query($dsn) === false)
-{
-	$result = array
-	(
-		'error' => array
-		(
-			'code' => 503,
-			'status' => 'Service Unavailable',
-		),
-	);
-
-	exit(ArrestDB::Reply($result));
-}
-
-if (array_key_exists('_method', $_GET) === true)
-{
+if (array_key_exists('_method', $_GET) === true) {
 	$_SERVER['REQUEST_METHOD'] = strtoupper(trim($_GET['_method']));
-}
-
-else if (array_key_exists('HTTP_X_HTTP_METHOD_OVERRIDE', $_SERVER) === true)
-{
+} else if (array_key_exists('HTTP_X_HTTP_METHOD_OVERRIDE', $_SERVER) === true) {
 	$_SERVER['REQUEST_METHOD'] = strtoupper(trim($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']));
 }
 
-ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data)
-{
-	$query = array
-	(
-		sprintf('SELECT * FROM "%s"', $table),
+ArrestDB_Custom::RUN();
+
+ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data) {
+	$fields = ArrestDB_Security::whitelist( $table, 'fields' );
+	$query = array(
+		sprintf('SELECT %s FROM "%s"', implode(', ', $fields), $table), // edit
 		sprintf('WHERE "%s" %s ?', $id, (ctype_digit($data) === true) ? '=' : 'LIKE'),
 	);
 
-	if (isset($_GET['by']) === true)
-	{
-		if (isset($_GET['order']) !== true)
-		{
-			$_GET['order'] = 'ASC';
-		}
+	if (isset($_GET['by']) === true) {
+		if (isset($_GET['order']) !== true) $_GET['order'] = 'ASC';
 
 		$query[] = sprintf('ORDER BY "%s" %s', $_GET['by'], $_GET['order']);
 	}
 
-	if (isset($_GET['limit']) === true)
-	{
+	if (isset($_GET['limit']) === true) {
 		$query[] = sprintf('LIMIT %u', $_GET['limit']);
 
-		if (isset($_GET['offset']) === true)
-		{
+		if (isset($_GET['offset']) === true) {
 			$query[] = sprintf('OFFSET %u', $_GET['offset']);
 		}
 	}
@@ -87,63 +49,34 @@ ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data)
 	$query = sprintf('%s;', implode(' ', $query));
 	$result = ArrestDB::Query($query, $data);
 
-	if ($result === false)
-	{
-		$result = array
-		(
-			'error' => array
-			(
-				'code' => 404,
-				'status' => 'Not Found',
-			),
-		);
-	}
-
-	else if (empty($result) === true)
-	{
-		$result = array
-		(
-			'error' => array
-			(
-				'code' => 204,
-				'status' => 'No Content',
-			),
-		);
+	if ($result === false) {
+		$result = ArrestDB::$NOT_FOUND;
+	} else if (empty($result) === true) {
+		$result = ArrestDB::$NO_CONTENT;
 	}
 
 	return ArrestDB::Reply($result);
 });
 
-ArrestDB::Serve('GET', '/(#any)/(#num)?', function ($table, $id = null)
-{
-	$query = array
-	(
-		sprintf('SELECT * FROM "%s"', $table),
+ArrestDB::Serve('GET', '/(#any)/(#num)?', function ($table, $id = null) {
+	$fields = ArrestDB_Security::whitelist( $table, 'fields' );
+	$query = array(
+		sprintf('SELECT %s FROM "%s"', implode(', ', $fields), $table), // edit
 	);
 
-	if (isset($id) === true)
-	{
-		$query[] = sprintf('WHERE "%s" = ? LIMIT 1', 'id');
-	}
-
-	else
-	{
-		if (isset($_GET['by']) === true)
-		{
-			if (isset($_GET['order']) !== true)
-			{
-				$_GET['order'] = 'ASC';
-			}
+	if (isset($id) === true) {
+		$query[] = sprintf('WHERE "%s" = ? LIMIT 1', $table . 'ID');
+	} else {
+		if (isset($_GET['by']) === true) {
+			if (isset($_GET['order']) !== true) $_GET['order'] = 'ASC';
 
 			$query[] = sprintf('ORDER BY "%s" %s', $_GET['by'], $_GET['order']);
 		}
 
-		if (isset($_GET['limit']) === true)
-		{
+		if (isset($_GET['limit']) === true) {
 			$query[] = sprintf('LIMIT %u', $_GET['limit']);
 
-			if (isset($_GET['offset']) === true)
-			{
+			if (isset($_GET['offset']) === true) {
 				$query[] = sprintf('OFFSET %u', $_GET['offset']);
 			}
 		}
@@ -152,319 +85,225 @@ ArrestDB::Serve('GET', '/(#any)/(#num)?', function ($table, $id = null)
 	$query = sprintf('%s;', implode(' ', $query));
 	$result = (isset($id) === true) ? ArrestDB::Query($query, $id) : ArrestDB::Query($query);
 
-	if ($result === false)
-	{
-		$result = array
-		(
-			'error' => array
-			(
-				'code' => 404,
-				'status' => 'Not Found',
-			),
-		);
-	}
-
-	else if (empty($result) === true)
-	{
-		$result = array
-		(
-			'error' => array
-			(
-				'code' => 204,
-				'status' => 'No Content',
-			),
-		);
-	}
-
-	else if (isset($id) === true)
-	{
+	if ($result === false) {
+		$result = ArrestDB::$NOT_FOUND;
+	} else if (empty($result) === true) {
+		$result = ArrestDB::$NO_CONTENT;
+	} else if (isset($id) === true) {
 		$result = array_shift($result);
 	}
 
 	return ArrestDB::Reply($result);
 });
 
-ArrestDB::Serve('DELETE', '/(#any)/(#num)', function ($table, $id)
-{
-	$query = array
-	(
-		sprintf('DELETE FROM "%s" WHERE "%s" = ?', $table, 'id'),
+ArrestDB::Serve('DELETE', '/(#any)/(#num)', function ($table, $id) {
+	$query = array(
+		sprintf('DELETE FROM "%s" WHERE "%s" = ?', $table, $table . 'ID'),
 	);
 
 	$query = sprintf('%s;', implode(' ', $query));
 	$result = ArrestDB::Query($query, $id);
 
-	if ($result === false)
-	{
-		$result = array
-		(
-			'error' => array
-			(
-				'code' => 404,
-				'status' => 'Not Found',
-			),
-		);
-	}
-
-	else if (empty($result) === true)
-	{
-		$result = array
-		(
-			'error' => array
-			(
-				'code' => 204,
-				'status' => 'No Content',
-			),
-		);
-	}
-
-	else
-	{
-		$result = array
-		(
-			'success' => array
-			(
-				'code' => 200,
-				'status' => 'OK',
-			),
-		);
+	if ($result === false) {
+		$result = ArrestDB::$NOT_FOUND;
+	} else if (empty($result) === true) {
+		$result = ArrestDB::$NO_CONTENT;
+	} else {
+		$result = ArrestDB::$OK;
 	}
 
 	return ArrestDB::Reply($result);
 });
 
-if (in_array($http = strtoupper($_SERVER['REQUEST_METHOD']), array('POST', 'PUT')) === true)
-{
-	if (preg_match('~^\x78[\x01\x5E\x9C\xDA]~', $data = file_get_contents('php://input')) > 0)
-	{
-		$data = gzuncompress($data);
-	}
+if (in_array($http = strtoupper($_SERVER['REQUEST_METHOD']), array('POST', 'PUT')) === true) {
+	if (preg_match('~^\x78[\x01\x5E\x9C\xDA]~', $data = file_get_contents('php://input')) > 0) $data = gzuncompress($data);
 
-	if ((array_key_exists('CONTENT_TYPE', $_SERVER) === true) && (empty($data) !== true))
-	{
-		if (strncasecmp($_SERVER['CONTENT_TYPE'], 'application/json', 16) === 0)
-		{
+	if ((array_key_exists('CONTENT_TYPE', $_SERVER) === true) && (empty($data) !== true)) {
+		if (strncasecmp($_SERVER['CONTENT_TYPE'], 'application/json', 16) === 0) {
 			$GLOBALS['_' . $http] = json_decode($data, true);
-		}
-
-		else if ((strncasecmp($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded', 33) === 0) && (strcasecmp($_SERVER['REQUEST_METHOD'], 'PUT') === 0))
-		{
+		} else if ((strncasecmp($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded', 33) === 0) && (strcasecmp($_SERVER['REQUEST_METHOD'], 'PUT') === 0)) {
 			parse_str($data, $GLOBALS['_' . $http]);
 		}
 	}
 
-	if ((isset($GLOBALS['_' . $http]) !== true) || (is_array($GLOBALS['_' . $http]) !== true))
-	{
-		$GLOBALS['_' . $http] = array();
-	}
+	if ((isset($GLOBALS['_' . $http]) !== true) || (is_array($GLOBALS['_' . $http]) !== true)) $GLOBALS['_' . $http] = array();
 
 	unset($data);
 }
 
-ArrestDB::Serve('POST', '/(#any)', function ($table)
-{
-	if (empty($_POST) === true)
-	{
-		$result = array
-		(
-			'error' => array
-			(
-				'code' => 204,
-				'status' => 'No Content',
-			),
-		);
-	}
-
-	else if (is_array($_POST) === true)
-	{
+ArrestDB::Serve('POST', '/(#any)', function ($table) {
+	if (empty($_POST) === true) {
+		$result = ArrestDB::$NO_CONTENT;
+	} else if (is_array($_POST) === true) {
 		$queries = array();
 
-		if (count($_POST) == count($_POST, COUNT_RECURSIVE))
-		{
-			$_POST = array($_POST);
-		}
+		if (count($_POST) == count($_POST, COUNT_RECURSIVE)) $_POST = array($_POST);
 
-		foreach ($_POST as $row)
-		{
+		foreach ($_POST as $row) {
 			$data = array();
 
-			foreach ($row as $key => $value)
-			{
-				$data[sprintf('"%s"', $key)] = $value;
+			// Clean Fields
+			$fields = ArrestDB_Security::whitelist( $table, 'fields' );
+			foreach ($row as $key => $value) {
+				if (in_array($key, $fields)) $data[sprintf('"%s"', $key)] = $value;
 			}
 
-			$query = array
-			(
+			$query = array(
 				sprintf('INSERT INTO "%s" (%s) VALUES (%s)', $table, implode(', ', array_keys($data)), implode(', ', array_fill(0, count($data), '?'))),
 			);
 
-			$queries[] = array
-			(
+			$queries[] = array(
 				sprintf('%s;', implode(' ', $query)),
 				$data,
 			);
 		}
 
-		if (count($queries) > 1)
-		{
+		if (count($queries) > 1) {
 			ArrestDB::Query()->beginTransaction();
 
-			while (is_null($query = array_shift($queries)) !== true)
-			{
-				if (($result = ArrestDB::Query($query[0], $query[1])) === false)
-				{
+			while (is_null($query = array_shift($queries)) !== true) {
+				if (($result = ArrestDB::Query($query[0], $query[1])) === false) {
 					ArrestDB::Query()->rollBack(); break;
 				}
 			}
 
-			if (($result !== false) && (ArrestDB::Query()->inTransaction() === true))
-			{
+			if (($result !== false) && (ArrestDB::Query()->inTransaction() === true)) {
 				$result = ArrestDB::Query()->commit();
 			}
-		}
-
-		else if (is_null($query = array_shift($queries)) !== true)
-		{
+		} else if (is_null($query = array_shift($queries)) !== true) {
 			$result = ArrestDB::Query($query[0], $query[1]);
 		}
 
-		if ($result === false)
-		{
-			$result = array
-			(
-				'error' => array
-				(
-					'code' => 409,
-					'status' => 'Conflict',
-				),
-			);
-		}
-
-		else
-		{
-			$result = array
-			(
-				'success' => array
-				(
-					'code' => 201,
-					'status' => 'Created',
-				),
-			);
+		if ($result === false) {
+			$result = ArrestDB::$CONFLICT;
+		} else {
+			$insertID = $result;
+			$result = ArrestDB::$CREATED;
+			$result['success']['insertID'] = $insertID;
 		}
 	}
 
 	return ArrestDB::Reply($result);
 });
 
-ArrestDB::Serve('PUT', '/(#any)/(#num)', function ($table, $id)
-{
-	if (empty($GLOBALS['_PUT']) === true)
-	{
-		$result = array
-		(
-			'error' => array
-			(
-				'code' => 204,
-				'status' => 'No Content',
-			),
-		);
-	}
-
-	else if (is_array($GLOBALS['_PUT']) === true)
-	{
+ArrestDB::Serve('PUT', '/(#any)/(#num)', function ($table, $id) {
+	if (empty($GLOBALS['_PUT']) === true) {
+		$result = ArrestDB::$NO_CONTENT;
+	} else if (is_array($GLOBALS['_PUT']) === true) {
 		$data = array();
 
-		foreach ($GLOBALS['_PUT'] as $key => $value)
-		{
-			$data[$key] = sprintf('"%s" = ?', $key);
+		// Clean Fields
+		$fields = ArrestDB_Security::whitelist( $table, 'fields' );
+		foreach ($GLOBALS['_PUT'] as $key => $value) {
+			if (in_array($key, $fields)) {
+				$data[$key] = sprintf('"%s" = ?', $key);
+			} else {
+				unset( $GLOBALS['_PUT'][$key] );
+			}
 		}
 
-		$query = array
-		(
-			sprintf('UPDATE "%s" SET %s WHERE "%s" = ?', $table, implode(', ', $data), 'id'),
+		$query = array(
+			sprintf('UPDATE "%s" SET %s WHERE "%s" = ?', $table, implode(', ', $data), $table . 'ID'),
 		);
 
 		$query = sprintf('%s;', implode(' ', $query));
 		$result = ArrestDB::Query($query, $GLOBALS['_PUT'], $id);
 
-		if ($result === false)
-		{
-			$result = array
-			(
-				'error' => array
-				(
-					'code' => 409,
-					'status' => 'Conflict',
-				),
-			);
-		}
-
-		else
-		{
-			$result = array
-			(
-				'success' => array
-				(
-					'code' => 200,
-					'status' => 'OK',
-				),
-			);
+		if ($result === false) {
+			$result = ArrestDB::$CONFLICT;
+		} else {
+			$result = ArrestDB::$OK;
 		}
 	}
 
 	return ArrestDB::Reply($result);
 });
 
-$result = array
-(
-	'error' => array
-	(
-		'code' => 400,
-		'status' => 'Bad Request',
-	),
-);
+$result = ArrestDB::$BAD_REQUEST;
 
 exit(ArrestDB::Reply($result));
 
-class ArrestDB
-{
-	public static function Query($query = null)
-	{
+class ArrestDB {
+
+	// Result Messages
+	public static $OK = array(
+		'success' => array(
+			'code' => 200,
+			'status' => 'OK',
+		),
+	);
+	public static $CREATED = array(
+		'success' => array(
+			'code' => 201,
+			'status' => 'Created',
+		),
+	);
+	public static $NO_CONTENT = array(
+		'error' => array(
+			'code' => 204,
+			'status' => 'No Content',
+		),
+	);
+	public static $BAD_REQUEST = array(
+		'error' => array(
+			'code' => 400,
+			'status' => 'Bad Request',
+		),
+	);
+	public static $FORBIDDEN = array(
+		'error' => array(
+			'code' => 403,
+			'status' => 'Forbidden'
+		)
+	);
+	public static $NOT_FOUND = array(
+		'error' => array(
+			'code' => 404,
+			'status' => 'Not Found',
+		),
+	);
+	public static $CONFLICT = array(
+		'error' => array(
+			'code' => 409,
+			'status' => 'Conflict',
+		),
+	);
+	public static $SERVICE_UNAVAILABLE = array(
+		'error' => array(
+			'code' => 503,
+			'status' => 'Service Unavailable',
+		),
+	);
+
+	// Operating Functions
+	public static function Query($query = null) {
 		static $db = null;
 		static $result = array();
 
-		try
-		{
-			if (isset($db, $query) === true)
-			{
-				if (strncasecmp($db->getAttribute(\PDO::ATTR_DRIVER_NAME), 'mysql', 5) === 0)
-				{
+		try {
+			if (isset($db, $query) === true) {
+				if (strncasecmp($db->getAttribute(\PDO::ATTR_DRIVER_NAME), 'mysql', 5) === 0) {
 					$query = strtr($query, '"', '`');
 				}
 
-				if (empty($result[$hash = crc32($query)]) === true)
-				{
+				if (empty($result[$hash = crc32($query)]) === true) {
 					$result[$hash] = $db->prepare($query);
 				}
 
 				$data = array_slice(func_get_args(), 1);
 
-				if (count($data, COUNT_RECURSIVE) > count($data))
-				{
+				if (count($data, COUNT_RECURSIVE) > count($data)) {
 					$data = iterator_to_array(new \RecursiveIteratorIterator(new \RecursiveArrayIterator($data)), false);
 				}
 
-				if ($result[$hash]->execute($data) === true)
-				{
+				if ($result[$hash]->execute($data) === true) {
 					$sequence = null;
 
-					if ((strncmp($db->getAttribute(\PDO::ATTR_DRIVER_NAME), 'pgsql', 5) === 0) && (sscanf($query, 'INSERT INTO %s', $sequence) > 0))
-					{
+					if ((strncmp($db->getAttribute(\PDO::ATTR_DRIVER_NAME), 'pgsql', 5) === 0) && (sscanf($query, 'INSERT INTO %s', $sequence) > 0)) {
 						$sequence = sprintf('%s_id_seq', trim($sequence, '"'));
 					}
 
-					switch (strstr($query, ' ', true))
-					{
+					switch (strstr($query, ' ', true)) {
 						case 'INSERT':
 						case 'REPLACE':
 							return $db->lastInsertId($sequence);
@@ -484,12 +323,8 @@ class ArrestDB
 				}
 
 				return false;
-			}
-
-			else if (isset($query) === true)
-			{
-				$options = array
-				(
+			} else if (isset($query) === true) {
+				$options = array(
 					\PDO::ATTR_CASE => \PDO::CASE_NATURAL,
 					\PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
 					\PDO::ATTR_EMULATE_PREPARES => false,
@@ -498,16 +333,13 @@ class ArrestDB
 					\PDO::ATTR_STRINGIFY_FETCHES => false,
 				);
 
-				if (preg_match('~^sqlite://([[:print:]]++)$~i', $query, $dsn) > 0)
-				{
-					$options += array
-					(
+				if (preg_match('~^sqlite:([[:print:]]++)$~i', $query, $dsn) > 0) {
+					$options += array(
 						\PDO::ATTR_TIMEOUT => 3,
 					);
 
 					$db = new \PDO(sprintf('sqlite:%s', $dsn[1]), null, null, $options);
-					$pragmas = array
-					(
+					$pragmas = array(
 						'automatic_index' => 'ON',
 						'cache_size' => '8192',
 						'foreign_keys' => 'ON',
@@ -522,23 +354,17 @@ class ArrestDB
 						'wal_autocheckpoint' => '4096',
 					);
 
-					if (strncasecmp(PHP_OS, 'WIN', 3) !== 0)
-					{
+					if (strncasecmp(PHP_OS, 'WIN', 3) !== 0) {
 						$memory = 131072;
 
-						if (($page = intval(shell_exec('getconf PAGESIZE'))) > 0)
-						{
+						if (($page = intval(shell_exec('getconf PAGESIZE'))) > 0) {
 							$pragmas['page_size'] = $page;
 						}
 
-						if (is_readable('/proc/meminfo') === true)
-						{
-							if (is_resource($handle = fopen('/proc/meminfo', 'rb')) === true)
-							{
-								while (($line = fgets($handle, 1024)) !== false)
-								{
-									if (sscanf($line, 'MemTotal: %d kB', $memory) == 1)
-									{
+						if (is_readable('/proc/meminfo') === true) {
+							if (is_resource($handle = fopen('/proc/meminfo', 'rb')) === true) {
+								while (($line = fgets($handle, 1024)) !== false) {
+									if (sscanf($line, 'MemTotal: %d kB', $memory) == 1) {
 										$memory = round($memory / 131072) * 131072; break;
 									}
 								}
@@ -551,18 +377,12 @@ class ArrestDB
 						$pragmas['wal_autocheckpoint'] = $pragmas['cache_size'] / 2;
 					}
 
-					foreach ($pragmas as $key => $value)
-					{
+					foreach ($pragmas as $key => $value) {
 						$db->exec(sprintf('PRAGMA %s=%s;', $key, $value));
 					}
-				}
-
-				else if (preg_match('~^(mysql|pgsql)://(?:(.+?)(?::(.+?))?@)?([^/:@]++)(?::(\d++))?/(\w++)/?$~i', $query, $dsn) > 0)
-				{
-					if (strncasecmp($query, 'mysql', 5) === 0)
-					{
-						$options += array
-						(
+				} else if (preg_match('~^(mysql|pgsql)://(?:(.+?)(?::(.+?))?@)?([^/:@]++)(?::(\d++))?/(\w++)/?$~i', $query, $dsn) > 0) {
+					if (strncasecmp($query, 'mysql', 5) === 0) {
+						$options += array(
 							\PDO::ATTR_AUTOCOMMIT => true,
 							\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES "utf8" COLLATE "utf8_general_ci", time_zone = "+00:00";',
 							\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
@@ -572,47 +392,37 @@ class ArrestDB
 					$db = new \PDO(sprintf('%s:host=%s;port=%s;dbname=%s', $dsn[1], $dsn[4], $dsn[5], $dsn[6]), $dsn[2], $dsn[3], $options);
 				}
 			}
-		}
-
-		catch (\Exception $exception)
-		{
+		} catch (\Exception $exception) {
 			return false;
 		}
 
 		return (isset($db) === true) ? $db : false;
 	}
 
-	public static function Reply($data)
-	{
+	public static function Reply($data) {
 		$bitmask = 0;
 		$options = array('UNESCAPED_SLASHES', 'UNESCAPED_UNICODE');
 
-		if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) === true)
-		{
+		if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) === true) {
 			$options[] = 'PRETTY_PRINT';
 		}
 
-		foreach ($options as $option)
-		{
+		foreach ($options as $option) {
 			$bitmask |= (defined('JSON_' . $option) === true) ? constant('JSON_' . $option) : 0;
 		}
 
-		if (($result = json_encode($data, $bitmask)) !== false)
-		{
+		if (($result = json_encode($data, $bitmask)) !== false) {
 			$callback = null;
 
-			if (array_key_exists('callback', $_GET) === true)
-			{
+			if (array_key_exists('callback', $_GET) === true) {
 				$callback = trim(preg_replace('~[^[:alnum:]\[\]_.]~', '', $_GET['callback']));
 
-				if (empty($callback) !== true)
-				{
+				if (empty($callback) !== true) {
 					$result = sprintf('%s(%s);', $callback, $result);
 				}
 			}
 
-			if (headers_sent() !== true)
-			{
+			if (headers_sent() !== true) {
 				header(sprintf('Content-Type: application/%s; charset=utf-8', (empty($callback) === true) ? 'json' : 'javascript'));
 			}
 		}
@@ -620,24 +430,23 @@ class ArrestDB
 		return $result;
 	}
 
-	public static function Serve($on = null, $route = null, $callback = null)
-	{
+	public static function Serve($on = null, $route = null, $callback = null) {
 		static $root = null;
 
-		if (isset($_SERVER['REQUEST_METHOD']) !== true)
-		{
+		if (isset($_SERVER['REQUEST_METHOD']) !== true) {
 			$_SERVER['REQUEST_METHOD'] = 'CLI';
 		}
 
-		if ((empty($on) === true) || (strcasecmp($_SERVER['REQUEST_METHOD'], $on) === 0))
-		{
-			if (is_null($root) === true)
-			{
+		if ((empty($on) === true) || (strcasecmp($_SERVER['REQUEST_METHOD'], $on) === 0)) {
+			if (is_null($root) === true) {
 				$root = preg_replace('~/++~', '/', substr($_SERVER['PHP_SELF'], strlen($_SERVER['SCRIPT_NAME'])) . '/');
 			}
 
-			if (preg_match('~^' . str_replace(array('#any', '#num'), array('[^/]++', '[0-9]++'), $route) . '~i', $root, $parts) > 0)
-			{
+			if (preg_match('~^' . str_replace(array('#any', '#num'), array('[^/]++', '[0-9]++'), $route) . '~i', $root, $parts) > 0) {
+
+				$actions = ArrestDB_Security::whitelist( $parts[1], 'actions' );
+				if (!in_array($on, $actions)) exit(ArrestDB::Reply( ArrestDB::$FORBIDDEN ));
+
 				return (empty($callback) === true) ? true : exit(call_user_func_array($callback, array_slice($parts, 1)));
 			}
 		}
