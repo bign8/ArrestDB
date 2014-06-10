@@ -444,8 +444,10 @@ class ArrestDB {
 
 			if (preg_match('~^' . str_replace(array('#any', '#num'), array('[^/]++', '[0-9]++'), $route) . '~i', $root, $parts) > 0) {
 
-				$actions = ArrestDB_Security::whitelist( $parts[1], 'actions' );
-				if (!in_array($on, $actions)) exit(ArrestDB::Reply( ArrestDB::$FORBIDDEN ));
+				if (count($parts) > 1) {
+					$actions = ArrestDB_Security::whitelist( $parts[1], 'actions' );
+					if (!in_array($on, $actions)) exit(ArrestDB::Reply( ArrestDB::$FORBIDDEN ));
+				}
 
 				return (empty($callback) === true) ? true : exit(call_user_func_array($callback, array_slice($parts, 1)));
 			}
