@@ -11,7 +11,7 @@ factory('ArrestDB', ['$http', function ($http) { // TODO: improve with browser d
 		return item;
 	};
 	var add_obj = function (item, data) {
-		item[ this.id ] = data.success.data;
+		item[ this.id ] = data.success.insertID;
 		this.list.push(item);
 		return item;
 	};
