@@ -1,8 +1,5 @@
 <?php
 
-$clients = array(
-);
-
 require('config.php');
 
 /**
@@ -15,10 +12,7 @@ require('config.php');
 
 if (strcmp(PHP_SAPI, 'cli') === 0) exit('ArrestDB should not be run from CLI.' . PHP_EOL);
 
-if ((empty($clients) !== true) && (in_array($_SERVER['REMOTE_ADDR'], (array) $clients) !== true)) {
-	$result = ArrestDB::$FORBIDDEN;
-	exit(ArrestDB::Reply($result));
-} else if (ArrestDB::Query($dsn) === false) {
+if (ArrestDB::Query($dsn) === false) {
 	$result = ArrestDB::$SERVICE_UNAVAILABLE;
 	exit(ArrestDB::Reply($result));
 }
@@ -32,8 +26,9 @@ if (array_key_exists('_method', $_GET) === true) {
 ArrestDB_Custom::RUN();
 
 ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data) {
+	$fields = ArrestDB_Security::whitelist( $table, 'fields' );
 	$query = array(
-		sprintf('SELECT * FROM "%s"', $table),
+		sprintf('SELECT %s FROM "%s"', implode(', ', $fields), $table), // edit
 		sprintf('WHERE "%s" %s ?', $id, (ctype_digit($data) === true) ? '=' : 'LIKE'),
 	);
 
@@ -64,8 +59,9 @@ ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data) {
 });
 
 ArrestDB::Serve('GET', '/(#any)/(#num)?', function ($table, $id = null) {
+	$fields = ArrestDB_Security::whitelist( $table, 'fields' );
 	$query = array(
-		sprintf('SELECT * FROM "%s"', $table),
+		sprintf('SELECT %s FROM "%s"', implode(', ', $fields), $table), // edit
 	);
 
 	if (isset($id) === true) {
@@ -146,8 +142,10 @@ ArrestDB::Serve('POST', '/(#any)', function ($table) {
 		foreach ($_POST as $row) {
 			$data = array();
 
+			// Clean Fields
+			$fields = ArrestDB_Security::whitelist( $table, 'fields' );
 			foreach ($row as $key => $value) {
-				$data[sprintf('"%s"', $key)] = $value;
+				if (in_array($key, $fields)) $data[sprintf('"%s"', $key)] = $value;
 			}
 
 			$query = array(
@@ -192,8 +190,14 @@ ArrestDB::Serve('PUT', '/(#any)/(#num)', function ($table, $id) {
 	} else if (is_array($GLOBALS['_PUT']) === true) {
 		$data = array();
 
+		// Clean Fields
+		$fields = ArrestDB_Security::whitelist( $table, 'fields' );
 		foreach ($GLOBALS['_PUT'] as $key => $value) {
-			$data[$key] = sprintf('"%s" = ?', $key);
+			if (in_array($key, $fields)) {
+				$data[$key] = sprintf('"%s" = ?', $key);
+			} else {
+				unset( $GLOBALS['_PUT'][$key] );
+			}
 		}
 
 		$query = array(
@@ -437,6 +441,10 @@ class ArrestDB {
 			}
 
 			if (preg_match('~^' . str_replace(array('#any', '#num'), array('[^/]++', '[0-9]++'), $route) . '~i', $root, $parts) > 0) {
+
+				$actions = ArrestDB_Security::whitelist( $parts[1], 'actions' );
+				if (!in_array($on, $actions)) exit(ArrestDB::Reply( ArrestDB::$FORBIDDEN ));
+
 				return (empty($callback) === true) ? true : exit(call_user_func_array($callback, array_slice($parts, 1)));
 			}
 		}
