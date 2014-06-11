@@ -53,11 +53,11 @@ class ArrestDB_Security {
 	);
 
 	public static function whitelist($table, $area) {
-		$user = $_SESSION['user'];
+		$access = @$_SESSION['user']['access'];
 
 		$result = array();
 		if (array_key_exists($table, self::$WHITELIST)) {
-			$access = isset($user['access']) ? intval($user['access']) : 0 ;
+			$access = isset($access) ? intval($access) : 0 ;
 
 			// decrementing until we find 0 or some form of security
 			while ( !array_key_exists($access, self::$WHITELIST[ $table ]) && $access > 0 ) $access--;
