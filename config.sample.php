@@ -10,14 +10,6 @@ class ArrestDB_Custom {
 		// ArrestDB::Serve('GET', '/(custom)/(#num)', function($table, $id) {
 		// 	return ArrestDB::Reply('Custom Response ' . $id);
 		// });
-		ArrestDB::Serve('GET', '/', function() {
-			return ArrestDB::Reply(array(
-				'Welcome' => array(
-					'To the future of REST APIs',
-					'https://github.com/bign8/ArrestDB'
-				)
-			));
-		});
 	}
 }
 
