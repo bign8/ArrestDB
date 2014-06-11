@@ -12,10 +12,7 @@ require('config.php');
 
 if (strcmp(PHP_SAPI, 'cli') === 0) exit('ArrestDB should not be run from CLI.' . PHP_EOL);
 
-if (ArrestDB::Query($dsn) === false) {
-	$result = ArrestDB::$SERVICE_UNAVAILABLE;
-	exit(ArrestDB::Reply($result));
-}
+if (ArrestDB::Query($dsn) === false) exit(ArrestDB::Reply( ArrestDB::$SERVICE_UNAVAILABLE ));
 
 if (array_key_exists('_method', $_GET) === true) {
 	$_SERVER['REQUEST_METHOD'] = strtoupper(trim($_GET['_method']));
@@ -219,9 +216,7 @@ ArrestDB::Serve('PUT', '/(#any)/(#num)', function ($table, $id) {
 	return ArrestDB::Reply($result);
 });
 
-$result = ArrestDB::$BAD_REQUEST;
-
-exit(ArrestDB::Reply($result));
+exit(ArrestDB::Reply( ArrestDB::$BAD_REQUEST ));
 
 class ArrestDB {
 
