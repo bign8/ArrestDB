@@ -1,3 +1,8 @@
+/*!
+ * ArrestDB-js 0.0.0 (https://github.com/bign8/ArrestDB/tree/ng)
+ * Author: bign8 (https://github.com/bign8)
+ * Licensed under MIT (https://github.com/bign8/ArrestDB/blob/ng/LICENSE)
+ */
 angular.module('ArrestDB', []).
 
 factory('ArrestDB', ['$http', function ($http) { // TODO: improve with browser data cashe
