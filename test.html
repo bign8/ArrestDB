@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Sample Page</title>
+</head>
+<body>
+	<script src="ArrestDB.js"></script>
+	<script>
+		// Debugging + Sample Use
+		var yes = function (x) {console.log('yes', x); };
+		var no = function (x) {console.log('no', x); };
+
+		var User = new ArrestDB('user');
+		var list = User.list;
+
+		console.log(list);
+
+		User.all().then(function (data) {
+			console.log(data);
+			console.log(list);
+			console.log( data === list );
+		});
+
+		User.get(1).then(yes, no);
+		User.get('Nathan Woods', 'name').then(yes, no);
+
+		User.set({
+			userID: 1,
+			name: 'Nataly Portman'
+		}).then(yes, no);
+	</script>
+</body>
+</html>
