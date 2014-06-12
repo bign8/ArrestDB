@@ -23,10 +23,10 @@ var ArrestDB = function () {
 			var req = new XMLHttpRequest();
 			req.open(method, url);
 			req.onload = function () {
-				if (req.status == 200) resolve(req.response);
-				else reject (Error(req.statusText));
+				if (req.status == 200) resolve( req.response );
+				else reject( new Error(req.statusText) );
 			};
-			req.onerror = reject.bind(null);
+			req.onerror = reject;
 			req.send(data);
 		}).then( check_valid ); // Add ArrestDB validity checker
 	};
