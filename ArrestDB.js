@@ -6,8 +6,13 @@ var ArrestDB = function () {
 	// Check if ArrestDB response status (reject if necessary)
 	var check_valid = function (data) {
 		return new Promise(function (resolve, reject) {
-			if (data.hasOwnProperty('success')) resolve(data);
-			else reject(data);
+			try {
+				data = JSON.parse(data);
+				if (data.hasOwnProperty('error')) reject( new Error(data.error) );
+				else resolve( data );
+			} catch (e) {
+				reject(e);
+			}
 		});
 	};
 
