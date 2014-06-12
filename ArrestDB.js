@@ -31,6 +31,29 @@ var ArrestDB = function () {
 		}).then( check_valid ); // Add ArrestDB validity checker
 	};
 
+	// Update client copy of list
+	var update_all = function (data) { // this.list = data; While maintaining reference to this.list
+		while (this.list.length) this.list.pop();
+		for (var i = 0, l = data.length; i < l; i++) this.list[i] = data[i];
+		return this.list;
+	};
+	var update_get = function (data) {
+		// TODO
+		return data;
+	};
+	var update_set = function (data) {
+		// TODO
+		return data;
+	};
+	var update_rem = function (data) {
+		// TODO
+		return data;
+	};
+	var update_add = function (data) {
+		// TODO
+		return data;
+	};
+
 	// service declaration
 	var service = function (table, identifier) {
 		if (!table) throw new Error('Table is Required');
@@ -45,20 +68,20 @@ var ArrestDB = function () {
 
 	service.prototype = {
 		all: function () {
-			return http('GET', base + this.table); // .then(/* manage list (all) */).then(/* call callbacks */);
+			return http('GET', base + this.table).then( update_all.bind(this) );
 		},
 		get: function (value, field) {
 			// TODO: lookup in local list if available (return Promise.resolve('found result'))
-			return http('GET', base + this.table + ( field ? '/' + field : '' ) + '/' + value); // .then(/* manage list (get) */).then(/* call callbacks */);
+			return http('GET', base + this.table + ( field ? '/' + field : '' ) + '/' + value); // .then(/* manage list (get) */);
 		},
 		set: function (item) {
-			return http('PUT', base + this.table + '/' + item[this.id], item); // .then(/* manage list (set) */).then(/* call callbacks */);
+			return http('PUT', base + this.table + '/' + item[this.id], item); // .then(/* manage list (set) */);
 		},
 		rem: function (item) {
-			return http('DELETE', base + this.table + '/' + item[this.id]); // .then(/* manage list (rem) */).then(/* call callbacks */);
+			return http('DELETE', base + this.table + '/' + item[this.id]); // .then(/* manage list (rem) */);
 		},
 		add: function (item) {
-			return http('POST', base + this.table, item); // .then(/* manage list (add) */).then(/* call callbacks */);
+			return http('POST', base + this.table, item); // .then(/* manage list (add) */);
 		},
 		list: [],
 	};
