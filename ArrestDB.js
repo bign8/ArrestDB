@@ -38,7 +38,9 @@ var ArrestDB = function () {
 		return this.list;
 	};
 	var update_get = function (data) {
-		// TODO
+		if (data.length) return data; // WTF is this
+		for (var i = 0, len = this.list.length, target = data[this.id]; i < len; i++) 
+			if (target == this.list[i][this.id]) this.list[i] = data;
 		return data;
 	};
 	var update_set = function (data) {
@@ -72,7 +74,7 @@ var ArrestDB = function () {
 		},
 		get: function (value, field) {
 			// TODO: lookup in local list if available (return Promise.resolve('found result'))
-			return http('GET', base + this.table + ( field ? '/' + field : '' ) + '/' + value); // .then(/* manage list (get) */);
+			return http('GET', base + this.table + ( field ? '/' + field : '' ) + '/' + value).then( update_get.bind(this) );
 		},
 		set: function (item) {
 			return http('PUT', base + this.table + '/' + item[this.id], item); // .then(/* manage list (set) */);
