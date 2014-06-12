@@ -2,6 +2,7 @@
 
 var ArrestDB = function () {
 	var base = './';
+	var global_map = {}; // hashmap of all created tables (singleton-ish)
 
 	// Check if ArrestDB response status (reject if necessary)
 	var check_valid = function (data) {
@@ -36,6 +37,7 @@ var ArrestDB = function () {
 		this._callbacks = [];
 		this.table = table;
 		this.id = identifier || (table + 'ID');
+		global_map.hasOwnProperty(table) ? this.list = global_map[table] : global_map[table] = this.list ;
 	};
 
 	// service.left_join // TODO
