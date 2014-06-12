@@ -34,7 +34,6 @@ var ArrestDB = function () {
 	// service declaration
 	var service = function (table, identifier) {
 		if (!table) throw new Error('Table is Required');
-		this._callbacks = [];
 		this.table = table;
 		this.id = identifier || (table + 'ID');
 		global_map.hasOwnProperty(table) ? this.list = global_map[table] : global_map[table] = this.list ;
@@ -62,33 +61,6 @@ var ArrestDB = function () {
 			return http('POST', base + this.table, item); // .then(/* manage list (add) */).then(/* call callbacks */);
 		},
 		list: [],
-
-		// Old, dumb callbacks
-		add_cb: function (c) {
-			this._callbacks.push(cb);
-		},
-		rem_cb: function (cb) {
-			var idx = this._callbacks.indexOf(cb);
-			if (idx >= 0) this._callbacks.splice(idx, 1);
-		},
-
-		// // Callbacks
-		// cb: {
-		// 	any: callbacks('any'), // assign add and rem
-		// 	all: callbacks('all'),
-		// 	get: callbacks('get'),
-		// 	set: callbacks('set'),
-		// 	rem: callbacks('rem'),
-		// 	add: callbacks('add'),
-		// }
-		// var callbacks = function (area) {
-		// 	var add = function () {
-
-		// 	};
-		// 	var rem = function () {
-
-		// 	};
-		// };
 	};
 
 	return service;
