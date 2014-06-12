@@ -43,8 +43,9 @@ var ArrestDB = function () {
 			if (target == this.list[i][this.id]) this.list[i] = data;
 		return data;
 	};
-	var update_set = function (data) {
-		// TODO
+	var update_set = function (item, data) {
+		for (var i = 0, len = this.list.length, target = item[this.id]; i < len; i++)
+			if (target == this.list[i][this.id]) this.list[i] = item;
 		return data;
 	};
 	var update_rem = function (data) {
@@ -77,7 +78,7 @@ var ArrestDB = function () {
 			return http('GET', base + this.table + ( field ? '/' + field : '' ) + '/' + value).then( update_get.bind(this) );
 		},
 		set: function (item) {
-			return http('PUT', base + this.table + '/' + item[this.id], item); // .then(/* manage list (set) */);
+			return http('PUT', base + this.table + '/' + item[this.id], item).then( update_set.bind(this, item) );
 		},
 		rem: function (item) {
 			return http('DELETE', base + this.table + '/' + item[this.id]); // .then(/* manage list (rem) */);
