@@ -5,8 +5,7 @@
  */
 angular.module('ArrestDB', []).
 
-factory('ArrestDB', ['$http', function ($http) { // TODO: improve with browser data cashe
-	var base = './';
+factory('ArrestDB', ['$http', 'ArrestDB_base', function ($http, ArrestDB_base) { // TODO: improve with browser data cashe
 	var cleanup = function (result) { return result.data.hasOwnProperty('error') ? [] : result.data; };
 	var rem_obj = function (item) {
 		for (var i = 0, l = this.list.length; i < l; i++) if ( item[this.id] == this.list[i][this.id] ) {
@@ -71,19 +70,19 @@ factory('ArrestDB', ['$http', function ($http) { // TODO: improve with browser d
 	};
 	service.prototype = {
 		all: function (suffix) {
-			return $http.get(base + this.table + (suffix ? suffix : '')).then( cleanup.bind(this) ).then( angular.extend.bind(undefined, this.list) ).then( callback.bind(this) );
+			return $http.get(ArrestDB_base + this.table + (suffix ? suffix : '')).then( cleanup.bind(this) ).then( angular.extend.bind(undefined, this.list) ).then( callback.bind(this) );
 		},
 		get: function (itemID, suffix) {
-			return $http.get(base + this.table + '/' + itemID + (suffix ? suffix : '')).then( cleanup.bind(this) ).then( callback.bind(this) );
+			return $http.get(ArrestDB_base + this.table + '/' + itemID + (suffix ? suffix : '')).then( cleanup.bind(this) ).then( callback.bind(this) );
 		},
 		set: function (item) {
-			return $http.put(base + this.table + '/' + item[ this.id ], item).then( cleanup.bind(this) ).then( mod_obj.bind(this, item) ).then( callback.bind(this) );
+			return $http.put(ArrestDB_base + this.table + '/' + item[ this.id ], item).then( cleanup.bind(this) ).then( mod_obj.bind(this, item) ).then( callback.bind(this) );
 		},
 		rem: function (item) {
-			return $http.delete(base + this.table + '/' + item[ this.id ]).then( cleanup.bind(this) ).then( rem_obj.bind(this, item) ).then( callback.bind(this) );
+			return $http.delete(ArrestDB_base + this.table + '/' + item[ this.id ]).then( cleanup.bind(this) ).then( rem_obj.bind(this, item) ).then( callback.bind(this) );
 		},
 		add: function (item) {
-			return $http.post(base + this.table, item).then( cleanup.bind(this) ).then( add_obj.bind(this, item) ).then( callback.bind(this) );
+			return $http.post(ArrestDB_base + this.table, item).then( cleanup.bind(this) ).then( add_obj.bind(this, item) ).then( callback.bind(this) );
 		},
 		add_cb: function (cb) {
 			this.callbacks.push(cb);
