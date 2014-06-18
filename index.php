@@ -20,7 +20,7 @@ if (array_key_exists('_method', $_GET) === true) {
 	$_SERVER['REQUEST_METHOD'] = strtoupper(trim($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']));
 }
 
-ArrestDB_Custom::RUN();
+ArrestDB_Custom::GET_DELETE();
 
 ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data) {
 	$fields = ArrestDB_Security::whitelist( $table, 'fields' );
@@ -127,6 +127,8 @@ if (in_array($http = strtoupper($_SERVER['REQUEST_METHOD']), array('POST', 'PUT'
 
 	unset($data);
 }
+
+ArrestDB_Custom::PUT_POST();
 
 ArrestDB::Serve('POST', '/(#any)', function ($table) {
 	if (empty($_POST) === true) {

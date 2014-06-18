@@ -6,8 +6,13 @@ if (session_id() == '') session_start();
 $dsn = '';
 
 class ArrestDB_Custom {
-	public static function RUN() {
+	public static function GET_DELETE() {
 		// ArrestDB::Serve('GET', '/(custom)/(#num)', function($table, $id) {
+		// 	return ArrestDB::Reply('Custom Response ' . $id);
+		// });
+	}
+	public static function PUT_POST() {
+		// ArrestDB::Serve('Post', '/(custom)/(#num)', function($table, $id) {
 		// 	return ArrestDB::Reply('Custom Response ' . $id);
 		// });
 	}
