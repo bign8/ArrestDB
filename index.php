@@ -25,7 +25,7 @@ ArrestDB_Custom::GET_DELETE();
 ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data) {
 	$fields = ArrestDB_Security::whitelist( $table, 'fields' );
 	$query = array(
-		sprintf('SELECT %s FROM "%s"', implode(', ', $fields), $table), // edit
+		sprintf('SELECT %s FROM "%s"', '"' . implode('", "', $fields) . '"', $table), // edit
 		sprintf('WHERE "%s" %s ?', $id, (ctype_digit($data) === true) ? '=' : 'LIKE'),
 	);
 
@@ -58,7 +58,7 @@ ArrestDB::Serve('GET', '/(#any)/(#any)/(#any)', function ($table, $id, $data) {
 ArrestDB::Serve('GET', '/(#any)/(#num)?', function ($table, $id = null) {
 	$fields = ArrestDB_Security::whitelist( $table, 'fields' );
 	$query = array(
-		sprintf('SELECT %s FROM "%s"', implode(', ', $fields), $table), // edit
+		sprintf('SELECT %s FROM "%s"', '"' . implode('", "', $fields) . '"', $table), // edit
 	);
 
 	if (isset($id) === true) {
